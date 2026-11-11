@@ -1,0 +1,51 @@
+def runCmd(String cmd) {
+    if (isUnix()) {
+        sh cmd
+    } else {
+        bat cmd
+    }
+}
+
+pipeline {                     // 전체 Pipeline
+    agent any                  // 어느 Node에서 실행할지
+    triggers {
+        pollSCM('H/2 * * * *') // 2분마다 실행
+        }     
+
+        stages {                   // 단계 목록
+        stage('Prepare') {       
+            steps {           
+                script {
+                    env.PY = isUnix ? 'python3' : 'python'
+                    env.VPY = isUnix ? '.ci-venv/bin/python' : '.ci-venv\\Scripts\\python'
+                }
+                echo "빌드 ${env.BUILD_NUMBER} - 커밋 ${env.GIT.COMMIT}"
+            }
+        }
+        stage('Setup') {       
+            steps {            
+                runCmd "${env.PY} -m -venv .ci-venv"
+                runCmd "${env.PY} -m pip install -q -r requirements.txt pytest"
+            }
+        }
+        stage('Syntex check') {         
+            steps {            
+                runCmd "${env.PY} -m -py_compile app.py deploy.py"
+            }
+        }
+        stage('Test') {        
+            steps {            
+                runCmd "${env.PY} -m pytest -v"
+            }
+        }
+        stage('Deploy') {        
+            steps {            
+                runCmd "${env.PY} deploy.py"
+            }
+        }
+    }
+    post {                     // 모든 단계가 끝난 뒤
+        always { ... }         // 성공 · 실패와 관계없이
+        failure { ... }        // 실패했을 때만
+    }
+}
