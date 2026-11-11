@@ -47,7 +47,7 @@ pipeline {
                     }
                 }
                 stage('Data Check'){
-                    agent { lable 'qa'}
+                    agent { label 'qa' 
                     steps {
                         echo "실행 Node : ${env.NODE_NAME}"
 
@@ -59,10 +59,10 @@ pipeline {
                     }
                 }
                 stage('API Test') {
-                    agent { lable 'qa'}       
+                    agent { label 'qa'       
                     steps {          
                         echo "실행 Node : ${env.NODE_NAME}"
-                          
+
                         runCmd "${env.PY} -m venv .ci-venv"       
                         runCmd "${env.VPY} -m pip install -q -r requirements.txt pytest pytest-html"
 
