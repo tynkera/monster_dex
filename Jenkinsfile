@@ -36,7 +36,8 @@ pipeline {
                 runCmd "${env.VPY} -m pip install -q -r requirements.txt pytest pytest-html"
             }
         }
-        stage('Checks') {
+        stage('Checks')
+        {
             failFast true
             parallel {
                 stage('Syntax Check') {       
@@ -47,36 +48,31 @@ pipeline {
                     }
                 }
                 stage('Data Check'){
-                    agent { label 'qa' 
+                    agent { label 'qa' }
                     steps {
-                        echo "실행 Node : ${env.NODE_NAME}"
 
+                        echo "실행 Node : ${env.NODE_NAME}"
+                        
                         runCmd "${env.PY} -m venv .ci-venv"       
-                        runCmd "${env.VPY} -m pip install -q -r requirements.txt pytest pytest-html"
+                        runCmd "${env.VPY} -m pip install -q -r requirements.txt pytest pytest-html"    
 
                         runCmd "${env.VPY} -m pytest -v tests/test_data.py --junitxml=reports/junit.xml --html=reports/report.html --self-contained-html"
                         sleep time:3, unit:'SECONDS'
                     }
                 }
-                stage('API Test') {
-                    agent { label 'qa'       
-                    steps {          
+                stage('API Test') {       
+                    agent { label 'qa' }
+                    steps {            
+                        
                         echo "실행 Node : ${env.NODE_NAME}"
-
+                        
                         runCmd "${env.PY} -m venv .ci-venv"       
-                        runCmd "${env.VPY} -m pip install -q -r requirements.txt pytest pytest-html"
-
-                        // pytest 실행
+                        runCmd "${env.VPY} -m pip install -q -r requirements.txt pytest pytest-html"    
+                        
                         runCmd "${env.VPY} -m pytest -v tests/test_api.py --junitxml=reports/junit.xml --html=reports/report.html --self-contained-html"
                         sleep time:3, unit:'SECONDS'
                     }
                 }
-            }
-        }
-        stage('Test') {       
-            steps {            
-                // pytest 실행
-                runCmd "${env.VPY} -m pytest -v"
             }
         }
         stage('Deploy') {       
@@ -86,8 +82,25 @@ pipeline {
         }
     }
     
-    // post {                     // 모든 단계가 끝난 뒤
-    //    always { ... }         // 성공 · 실패와 관계없이
-    //    failure { ... }        // 실패했을 때만
-    // }
+    post {                     // 모든 단계가 끝난 뒤
+       always {          // 성공 · 실패와 관계없이
+            // junit
+            junit allowEmptyResults:true, testResults:'reports/*.xml'
+            
+            // html publish
+            publishHTML(target:[
+                reportDir: 'reports',
+                reportFiles: 'data.html, report.html',
+                reportName: 'pytest report',
+                keepAll: true,
+                alwaysLinkToLastBuild: true,
+                allowMissing: true
+            ])
+
+
+            // 이메일 전송
+            // slack 전송
+        }
+        // failure { ... }        // 실패했을 때만
+    }
 }
