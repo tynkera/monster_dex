@@ -10,7 +10,9 @@ def runCmd(String cmd) {
 pipeline {
     
     agent any
-    
+    environment {
+        PYTHONUTF8 = '1'
+    }
     triggers { 
         pollSCM('H/2 * * * *') // 2분마다 실행
     }    
