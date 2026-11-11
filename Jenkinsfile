@@ -33,7 +33,7 @@ pipeline {
                 // sh "python3 -m venv .ci-venv"      
                 // bat "python -m venv .ci-venv"        
                 runCmd "${env.PY} -m venv .ci-venv"       
-                runCmd "${env.VPY} -m pip install -q -r requirements.txt pytest"
+                runCmd "${env.VPY} -m pip install -q -r requirements.txt pytest pytest-html"
             }
         }
         stage('Checks') {
@@ -47,13 +47,25 @@ pipeline {
                     }
                 }
                 stage('Data Check'){
+                    agent { lable 'qa'}
                     steps {
+                        echo "실행 Node : ${env.NODE_NAME}"
+
+                        runCmd "${env.PY} -m venv .ci-venv"       
+                        runCmd "${env.VPY} -m pip install -q -r requirements.txt pytest pytest-html"
+
                         runCmd "${env.VPY} -m pytest -v tests/test_data.py --junitxml=reports/junit.xml --html=reports/report.html --self-contained-html"
                         sleep time:3, unit:'SECONDS'
                     }
                 }
-                stage('API Test') {       
-                    steps {            
+                stage('API Test') {
+                    agent { lable 'qa'}       
+                    steps {          
+                        echo "실행 Node : ${env.NODE_NAME}"
+                          
+                        runCmd "${env.PY} -m venv .ci-venv"       
+                        runCmd "${env.VPY} -m pip install -q -r requirements.txt pytest pytest-html"
+
                         // pytest 실행
                         runCmd "${env.VPY} -m pytest -v tests/test_api.py --junitxml=reports/junit.xml --html=reports/report.html --self-contained-html"
                         sleep time:3, unit:'SECONDS'
